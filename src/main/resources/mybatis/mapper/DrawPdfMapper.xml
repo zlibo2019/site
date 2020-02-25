@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper
+.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.weds.site.mapper.DrawPdfMapper">
+
+
+  <select id="selectAllCompany" resultType="java.lang.Integer">
+    select distinct reg_serial as regSerial from dt_contract order by reg_serial
+  </select>
+
+  <select id="selectContractCount" parameterType="java.lang.Integer" resultType="com.weds.site.entity.DtContractCountRsp">
+	select user_serial as userSerial,COUNT(*) as userContractCount from dt_contract 
+	where reg_serial=#{regSerial,jdbcType=INTEGER} 
+	group by user_serial
+  </select>
+
+  <select id="selectAllUploadFile" resultType="com.weds.site.entity.DtContractRsp">
+    select xh,lx,user_serial as userSerial,reg_serial as regSerial,contract_name as contractName,contract_path as contractPath,is_show as isShow,sj,contract_bh as contractBh,
+    sendStatus from dt_contract where user_serial=#{userSerial,jdbcType=INTEGER}  and reg_serial=#{regSerial,jdbcType=INTEGER}
+    order by sj desc 
+  </select>
+
+  <select id="selectMoveContractToAttachment" resultType="java.lang.Integer">
+    select count(*) from dt_contract_attachment where user_serial=#{userSerial,jdbcType=INTEGER}  and reg_serial=#{regSerial,jdbcType=INTEGER}
+  </select>
+
+   <insert id="moveContractToAttachment" >
+    INSERT INTO dt_contract_attachment(lx,user_serial,reg_serial,contract_name,contract_path,is_show,sj,contract_bh,sendStatus)
+	select lx,user_serial,reg_serial,contract_name,contract_path,is_show,sj,contract_bh,sendStatus from dt_contract
+	where user_serial=#{userSerial,jdbcType=INTEGER}  and reg_serial=#{regSerial,jdbcType=INTEGER} 
+  </insert>
+
+  <select id="selectMoveContractToAttachmentByXh"  parameterType="com.weds.site.entity.DtContractRsp" resultType="java.lang.Integer">
+	select count(*) from dt_contract_attachment 
+	where user_serial=#{userSerial,jdbcType=INTEGER} and reg_serial=#{regSerial,jdbcType=INTEGER} 
+	and contract_name=#{contractName,jdbcType=VARCHAR} and contract_path=#{contractPath,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectMoveContractToAttachmentStatusByXh"  parameterType="com.weds.site.entity.DtContractRsp" resultType="java.lang.Integer">
+	select count(*) from dt_contract_attachment 
+	where user_serial=#{userSerial,jdbcType=INTEGER} and reg_serial=#{regSerial,jdbcType=INTEGER} 
+	and contract_name=#{contractName,jdbcType=VARCHAR} and contract_path=#{contractPath,jdbcType=VARCHAR} and isnull(sendStatus,0)=0 
+  </select>
+
+  <insert id="moveContractToAttachmentByXh" parameterType="com.weds.site.entity.DtContractRsp" >
+    INSERT INTO dt_contract_attachment(lx,user_serial,reg_serial,contract_name,contract_path,is_show,sj,contract_bh,sendStatus)
+	select lx,user_serial,reg_serial,contract_name,contract_path,is_show,sj,contract_bh,sendStatus from dt_contract
+	where user_serial=#{userSerial,jdbcType=INTEGER}  and reg_serial=#{regSerial,jdbcType=INTEGER} and xh=#{xh,jdbcType=INTEGER}
+  </insert>
+
+   <insert id="contractToSql" parameterType="com.weds.site.entity.DtContractRsp">
+       INSERT INTO dt_contract_attachment(lx,user_serial,reg_serial,contract_name,contract_path,sj,contract_bh)
+       values(#{lx,jdbcType=INTEGER},#{userSerial,jdbcType=INTEGER},#{regSerial,jdbcType=INTEGER},#{contractName,jdbcType=VARCHAR},#{contractPath,jdbcType=VARCHAR},#{sj,jdbcType=VARCHAR},#{contractBh,jdbcType=INTEGER})
+   </insert>
+    
+</mapper>

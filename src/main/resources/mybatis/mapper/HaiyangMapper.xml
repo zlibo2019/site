@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.weds.site.mapper.HaiyangMapper">
+
+	<!-- 企业信息 -->
+	<select id="getProjectList" resultType="com.weds.site.entity.DtProjectRsp">
+		<![CDATA[
+           select bh as bh,pro_name as proName,regserial as regSerial,haiyangtoken as token,haiyangprocode as projcode from dt_pro 
+           where haiyangtoken is not null and haiyangprocode is not null
+		]]>
+	</select>
+
+
+	<!-- 人员详细信息 -->
+	<select id="getWorkerListByRegserial" parameterType="java.lang.String"
+		resultType="com.weds.site.entity.HaiyangWorkerListEntity">	
+		<![CDATA[
+		   select top 50 userSerial,migName,idCard,image,homeAddress,nation,tel,workType,educLevel,pltType,nativePlace,grantorg,
+		   acctNum,workTeam,isTeamLeader,workRole,corpId,ownCorp,status,contractLabor,entryTime from  
+           (select  distinct  a.parentID as userSerial,b.user_lname as migName,b.user_id as idCard,(e.photo_path+e.photo_name) as image,
+           b.user_address as homeAddress, b.user_nation as nation,b.user_telephone as tel,isnull(f.bh,15) as workType, 
+           (case when b.CultureLevelType='01' or b.CultureLevelType='02' then 1 when b.CultureLevelType='03' or b.CultureLevelType='04' then 2 else 3 end) as educLevel, 
+           (case when b.PoliticsType='01' then 1 when b.PoliticsType='03' then 2 else 3 end) as pltType,b.user_address as nativePlace, 
+           b.user_grantOrg as grantorg, b.user_bank as acctNum,b.user_fname as workTeam,b.isTeamLeader as isTeamLeader,b.workRole as workRole,
+           c.CorpCode as corpId, b.AffiliatedCompany as ownCorp, 
+           (case when b.user_type<51 then 1 when b.user_type<=51 then 2 end) as status, 
+           (case when d.xh is null then 2 else 1 end) as contractLabor, convert(VARCHAR(10),b.EntryTime,120) as entryTime 
+           from wt_gdsend_log a left join dt_user_all b on a.parentID=b.user_serial 
+           left join dt_photo e on b.user_serial=e.user_serial left join gd_CorpBasicInfo c on b.AffiliatedCompany=c.CorpName 
+           left join dt_contract d on b.user_serial=d.user_serial left join hy_work_type f on b.user_duty=f.work_type
+           where a.send_lx=2 and a.send_fun=0 and isnull(a.send_lc,0)=0 
+           and a.regserial=#{regSerial,jdbcType=VARCHAR} and b.user_lname is not null and b.user_id is not null and e.photo_path is not null and e.photo_name is not null 
+           and b.user_address is not null and b.user_nation is not null and b.user_telephone is not null and b.user_duty is not null 
+           and b.user_grantOrg is not null and b.workRole is not null and c.CorpCode is not null and b.AffiliatedCompany is not null 
+           and  b.EntryTime is not null)a
+		]]>
+	</select>
+
+
+	<!-- 更新人员信息上传结果 -->
+	<update id="updateSendUserResult" parameterType="java.lang.String">
+		update wt_gdsend_log set send_lc=1,send_jg=600 where parentID=#{userSerial,jdbcType=VARCHAR}
+	</update>
+
+
+	<!-- 工人考勤记录信息 -->
+	<select id="getHaiyangRecordList" parameterType="java.lang.String"
+		resultType="com.weds.site.entity.HaiyangRecordListEntity">
+
+		select top 20 a.bh as id,b.user_id as idcard,a.sj as time,c.haiyangtoken as
+		token,c.haiyangprocode as projcode,b.AffiliatedCompany as
+		organname,b.user_card as safecard,
+		a.fx as ioflag
+		from kt_jl a left join st_device f1 on a.dev_serial =f1.bh
+		left join dt_user b on a.user_serial=b.user_serial
+		left join dt_dep w	on b.user_dep =w.dep_serial
+		left join dt_pro c on f1.regserial=c.regserial
+		where a.sendStatus =0 and f1.regserial=#{regSerial,jdbcType=VARCHAR} 	
+		<!--and a.user_serial in (select distinct parentId from wt_gdsuccess_log where send_jg=600 and send_lx=2 and regserial=#{regSerial,jdbcType=VARCHAR})
+		and a.user_serial in (select distinct parentId from wt_gdsuccess_log where send_jg=600 and send_lx=6 and regserial=#{regSerial,jdbcType=VARCHAR})
+-->
+	</select>
+
+
+
+	<!-- 更新工人考勤记录状态 -->
+	<update id="updateWorkerJlBybhStatus" parameterType="java.lang.Integer">
+		update kt_jl set sendStatus=1 where bh=#{bh,jdbcType=INTEGER}
+	</update>
+
+
+
+
+</mapper>

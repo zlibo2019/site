@@ -1,0 +1,1045 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.weds.site.mapper.DataDockingMapper">
+
+	<!-- 企业信息 -->
+	<select id="getCorpInfo"
+		resultType="com.weds.site.entity.DockingCorpInfoEntity">
+		
+		<![CDATA[
+		select a.xh,b.id,a.send_fun	sendFun,b.CorpCode as corpCode,c.appid as zhangHao ,c.secretkey as miYao,
+		b.CorpName as corpName,b.AreaCode as areaCode,b.Address as address,
+		convert(char(10),b.RegisterDate,120) as registerDate,CorpType as corpType,LicenseNum	as licenseNum,
+		ZipCode as zipCode,LegalMan as legalMan,LegalManDuty as	legalManDuty,
+		LegaManProTitle as legaManProTitle,LegalManIDCardType as legalManIDCardType,
+		LegalManIDCardNumber as legalManIDCardNumber,
+		RegCapital as regCapital,FactRegCapital as factRegCapital,
+		CapitalCurrencyType as capitalCurrencyType,EstablishDate as establishDate,
+		OfficePhone as officePhone,FaxNumber as faxNumber,LinkMan as linkMan,
+		LinkPhone as linkTel,Email as email,website,'' as remark
+		from wt_gdsend_log a left join	gd_CorpBasicInfo b on a.parentID=b.id
+		left join dt_pro c on a.regserial=c.regserial
+		where send_lx=0 and	a.send_state=0  and  (isnull(c.appid,'')<>'' and isnull(c.secretkey,'')<>'' and isnull(b.CorpCode,'')<>'')
+		]]>
+		
+	</select>
+	
+<!-- 		<select id="getCorpInfo"
+		resultType="com.weds.site.entity.DockingCorpInfoEntity">
+		select a.xh,b.id,a.regserial,a.send_fun	sendFun,b.CorpCode as corpCode,
+		b.CorpName as corpName,b.AreaCode as areaCode,b.Address as address,
+		convert(char(10),b.RegisterDate,120) as registerDate,CorpType as corpType,LicenseNum	as licenseNum,
+		ZipCode as zipCode,LegalMan as legalMan,LegalManDuty as	legalManDuty,
+		LegaManProTitle as legaManProTitle,LegalManIDCardType as legalManIDCardType,
+		LegalManIDCardNumber as legalManIDCardNumber,
+		RegCapital as regCapital,FactRegCapital as factRegCapital,
+		CapitalCurrencyType as capitalCurrencyType,EstablishDate as establishDate,
+		OfficePhone as officePhone,FaxNumber as faxNumber,LinkMan as linkMan,
+		LinkPhone as linkTel,Email as email,website,'' as remark
+		from wt_gdsend_log a left join	gd_CorpBasicInfo b on a.parentID=b.id
+		where send_lx=0 and	a.send_state=0 and a.parentID not in (select parentID from wt_gdsuccess_log where send_lx=0)
+		</select> -->
+
+
+
+	<!-- 项目信息 -->
+	<select id="getProBasicInfo"
+		resultType="com.weds.site.entity.DockingProBasicInfoEntity">
+		<![CDATA[
+		select a.xh,b.bh,a.send_fun as sendFun,b.code as projectCode,b.appid,b.secretkey,b.isnewpro,
+		c.CorpCode as contractorCorpCode,c.CorpName as contractorCorpName,b.pro_name as name,
+		b.Category as category,b.AreaCode as areaCode,b.pro_state as prjStatus,
+		Description as description,BuildCorpName as buildCorpName,BuildCorpCode as buildCorpCode,
+		BuildPlanNum as buildPlanNum,PrjPlanNum as prjPlanNum,Invest as invest,BuildingArea as buildingArea,
+		BuildingLength as buildingLength,convert(char(10),pro_kssj,120) as startDate,convert(char(10),pro_jssj,120) as completeDate,LinkMan as linkMan,
+		LinkPhone as linkPhone,Lng as lng,Lat as lat,Address as address,ApprovalNum as approvalNum,
+		ApprovalLevelNum as approvalLevelNum,PrjSize as prjSize,PropertyNum as propertyNum,PrjNum as functionNum,
+		'' as nationNum	from wt_gdsend_log a 
+		left join dt_pro b on a.regserial=b.regserial
+		left join gd_CorpBasicInfo c on b.corpID=c.ID
+		where send_lx=1 and	a.send_state=0 and send_fun =1  and isnull(CorpCode,'')<>''
+		]]>
+
+	</select>
+
+
+	<!-- 项目信息 许可证信息 -->
+	<select id="getProBuilderLicenses"
+		parameterType="java.lang.Integer"
+		resultType="com.weds.site.entity.BuilderLicensesEntity">
+		select a.pro_name as prjName,b.BuilderLicenseNum as builderLicenseNum
+		from dt_pro a left join gd_ProBuilderLicense b on a.bh=b.ProCode
+		where a.bh=#{bh,jdbcType=INTEGER}
+
+	</select>
+
+
+	<!-- 更新项目表项目编码 -->
+	<update id="updateProCode" parameterType="java.lang.String">
+		update dt_pro set code=#{projectCode,jdbcType=VARCHAR} 
+		where regserial in  (select regserial from wt_gdsend_log  where send_lx=1 and request_serial=#{requestSerialCode,jdbcType=VARCHAR})
+	</update>
+	
+	
+	<!-- 项目参建单位信息 -->
+	<select id="getProSubContractorInfo"
+		resultType="com.weds.site.entity.DockingProContractorEntity">
+		<![CDATA[
+		select a.xh,b.id,a.send_fun as sendFun,d.code as projectCode, b.CorpCode  as corpCode,D.appid as zhangHao,d.secretkey as miYao,
+		b.CorpName as corpName,b.CorpType as corpType,b.EntryTime as entryTime,b.ExitTime as exitTime,
+		b.PMName as pmName,b.PMIDCardType as pmIDCardType,b.PMIDCardNumber as pmIDCardNumber,
+		b.PMPhone as pmPhone,e.CorpCode as danw from wt_gdsend_log a 
+		left join gd_ProCorpInfo b on a.parentID=b.id
+		left join gd_ProCorpRelationship c on b.id=c.CorpId and a.regserial=c.proCode
+		left join dt_pro d on c.ProCode =d.regserial
+		left join gd_CorpBasicInfo e on d.corpId=e.id
+		where send_lx=3 and	a.send_state=0  and isnull(d.code,'')<>'' and isnull(d.appid,'')<>'' and isnull(d.secretkey,'')<>''
+		]]>
+
+	</select>
+	
+	
+	
+	<!-- 项目参建单位-发放工资的银行信息 -->
+	<select id="getProContractorBankInfo"
+		parameterType="java.lang.String"
+		resultType="com.weds.site.entity.BankInfosEntity">
+		<![CDATA[
+ 		select bankCode ,BankName as bankName,BankNumber as bankNumber,
+ 		BankLinkNumber as bankLinkNumber from gd_ProCorpInfo 
+ 		where CorpCode=#{corpCode,jdbcType=VARCHAR} and 
+ 		isnull(bankCode,'')<>'' and isnull(BankNumber,'')<>''
+		]]>
+	</select>
+	
+	
+	
+	<!-- 班组信息 -->
+ 	<select id="getTeamInfo"
+		resultType="com.weds.site.entity.DockingTeamEntity">
+
+		<![CDATA[
+ 		select a.xh,b.id,a.regserial,a.send_fun as sendFun, 
+		b.teamSysNo,c.code as projectCode,d.corpCode,d.corpName,b.teamName,
+		b.responsiblePersonName,b.ResponsiblePersonPhone as responsiblePersonPhone,
+		b.responsiblePersonIDCardType,b.responsiblePersonIDNumber,b.remark,
+		convert(varchar(10),'',120) as entryTime,convert(varchar(10),'',120) as exitTime
+		from wt_gdsend_log a left join gd_TeamMaster b  on a.parentID=b.id and a.regserial =b.ProCode 
+		left join dt_pro c on a.regserial=c.regserial
+		left join gd_ProCorpInfo d on b.SubContractorID=d.id
+		where send_lx=5 and	a.send_state=0 and  b.teamState =0 and
+		(c.code<>'' and c.code is not null and d.corpCode <>'' and d.corpCode is not null)
+		
+		]]>
+		
+	</select> 
+ 
+	
+		
+	<!-- 更新班组编码 -->
+	<update id="updateTeamCode" parameterType="java.lang.String">
+		 update gd_TeamMaster set TeamSysNo=#{teamSysNo,jdbcType=VARCHAR} 
+		where id in  (select parentID from wt_gdsend_log  where send_lx=5 and request_serial=#{requestSerialCode,jdbcType=VARCHAR})
+	</update>
+			
+			
+		
+	<!-- 项目培训信息 -->
+	<!-- <select id="getProTrainingInfo1"
+		resultType="com.weds.site.entity.DockingProTrainingEntity">
+
+		select a.id,b.code as projectCode,convert(varchar(10),trainingDate,120)  as trainingDate,
+		a.trainingDuration,a.trainingName,a.trainingTypeCode,a.trainer,
+		a.trainingOrg,trainingAddress,a.description
+		from gd_ProTraining a left join dt_pro b on a.ProCode =b.regserial
+		where id in ( select distinct parentID from gd_ProTrainingDetail where sendStatus=0)
+
+	</select>	 -->
+	
+	
+	<select id="getProTrainingInfo"
+		resultType="com.weds.site.entity.DockingProTrainingEntity">
+
+		<![CDATA[
+		select a.id,b.code as projectCode,convert(varchar(10),trainingDate,120)  as trainingDate,
+		a.trainingDuration,a.trainingName,a.trainingTypeCode,a.trainer,
+		a.trainingOrg,trainingAddress,a.description,b.regserial
+		from gd_ProTraining a left join dt_pro b on a.ProCode =b.regserial
+		where  datediff(d,TrainingDate,getdate())>2 and isnull(sendStatus,0)=0 and b.code is not null 
+		]]>
+	</select>	
+	
+	
+	
+	<!-- 项目培训人员详情 -->
+	<select id="getProTrainingDetailInfo"
+		parameterType="java.lang.Integer"
+		resultType="com.weds.site.entity.WorkersEntity">
+		
+ 		select  a.id,b.user_id as idCardNumber,'01' as idCardType ,case when a.isPass=2 then 0 else a.IsPass end IsPass,a.Score as trainingScore 
+ 		from gd_ProTrainingDetail a left join dt_user b on a.userSerial=b.user_serial 
+ 		where  sendStatus=0 and parentID=#{id,jdbcType=INTEGER}
+ 		and a.userserial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =2 and regserial=#{regSerial,jdbcType=INTEGER})
+ 		
+	</select>	
+	
+	
+	<!-- 待上传培训总人数 -->
+	<select id="getProTrainingCnt"
+		parameterType="java.lang.Integer"
+		resultType="java.lang.Integer">
+ 		select count(1)	from gd_ProTrainingDetail 
+ 		where sendStatus=0 and  parentID=#{id,jdbcType=INTEGER}
+	</select>	
+	
+	
+		
+ 	<!-- 更新培训详情状态 -->
+	<update id="updateProTrainingByIdStatus" parameterType="java.lang.Integer">
+		 update gd_ProTrainingDetail set sendStatus=1 where id=#{id,jdbcType=INTEGER}
+	</update>
+	
+	
+	
+	
+	<!-- 更新培训状态 -->
+	<update id="updateProTraByIdStatus" parameterType="java.lang.Integer">
+		 update gd_ProTraining set sendStatus=1 where id=#{id,jdbcType=INTEGER}
+	</update>
+	
+	
+	<!-- 人员信息 
+	<select id="getWorkerInfo"
+		resultType="com.weds.site.entity.DockingWorkerEntity">
+ 		select a.xh,b.user_serial as userSerial,a.send_fun as sendFun,a.regSerial,
+		c.code as projectCode, d.corpCode,d.corpName,e.teamSysNo,e.teamName,
+		b.user_lname as workerName,b.isTeamLeader,b.idCardType,b.user_id as idCardNumber,
+		b.user_duty as  workType,b.workRole ,'' as issueCardDate ,b.user_card as cardNumber,user_nation as nation,
+		user_address as address ,politicsType,joinedTime,user_telephone as cellPhone,cultureLevelType,Specialty,
+		hasBadMedicalHistory,'' as urgentLinkMan,'' as urgentLinkManPhone,'' as workDate,'' as maritalStatus,
+		user_grantOrg as grantOrg,convert(varchar(10),user_starDate,120) as startDate,convert(varchar(10),user_expiryDate,120) as expiryDate
+		from wt_gdsend_log a left join dt_user b on a.parentID=b.user_serial
+		left join dt_pro c on a.regserial =c.regserial
+		left join gd_CorpBasicInfo d on c.corpID =d.id
+		left join gd_TeamMaster e on b.user_fname =e.TeamName
+		where send_lx=2 and	a.send_state=0
+		order by b.user_fname 
+	</select>
+	-->
+	
+	
+	
+	<!-- 人员详细信息 -->
+	<select id="getWorkerListInfo"
+		parameterType="java.lang.String"
+		resultType="com.weds.site.entity.WorkerListEntity">
+		
+		<![CDATA[
+		select  top 5 a.user_serial as userSerial,a.user_lname as workerName,a.isTeamLeader,a.idCardType,a.user_id as idCardNumber,
+		f.tt_code as workType,a.workRole ,'' as issueCardDate ,a.user_card as cardNumber,user_nation as nation,
+		user_address as address ,politicsType,joinedTime,user_telephone as cellPhone,cultureLevelType,Specialty,
+		hasBadMedicalHistory,'' as urgentLinkMan,'' as urgentLinkManPhone,'' as workDate,'' as maritalStatus,
+		user_grantOrg as grantOrg,convert(varchar(10),user_starDate,120) as startDate,convert(varchar(10),user_expiryDate,120) as expiryDate,c.photo_path+c.photo_name as headImage	 
+		from dt_user_all a left join dt_dep b on a.user_dep =b.dep_serial
+		left  join dt_photo c on a.user_serial=c.user_serial
+		left join tt_duty f on a.user_duty=f.tt_name 
+		where  user_fname=#{teamName,jdbcType=VARCHAR} and a.user_serial in (
+		select parentId from wt_gdsend_log where send_lx=2 and send_state=0 and send_fun =0 and regserial=#{regSerial,jdbcType=VARCHAR}
+		) and b.dep_regserial =#{regSerial,jdbcType=VARCHAR} and a.user_photo=1  and 
+		a.user_serial not in (select distinct parentID from wt_gdsuccess_log where regserial=#{regSerial,jdbcType=VARCHAR}  and send_lx=2 and send_jg=600)
+		and isnull(f.tt_code,'')<>'' and isnull(a.user_id,'')<>'' and  a.workRole is not null and isnull(a.idCardType,'')<>''
+		and isnull(user_nation,'')<>'' and isnull(user_address,'')<>'' and isnull(politicsType,'')<>'' and isnull(user_telephone,'')<>'' and 
+		isnull(cultureLevelType,'')<>'' and isnull(user_grantOrg,'')<>'' 
+		]]>
+	</select>
+	
+	
+	<!-- 此班组待上传总人数 -->
+	<select id="getTeamWorkerCnt"
+		parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		select  count(1)
+		from dt_user_all a left join dt_dep b on a.user_dep =b.dep_serial  
+		where  user_fname=#{teamName,jdbcType=VARCHAR} and user_serial in (
+		select parentId from wt_gdsend_log where send_lx=2 and send_state=0 and send_fun =0 and regserial=#{regSerial,jdbcType=VARCHAR}
+		) and b.dep_regserial =#{regSerial,jdbcType=VARCHAR} and a.user_photo=1 and 
+		a.user_serial not in (select distinct parentID from wt_gdsuccess_log where regserial=#{regSerial,jdbcType=VARCHAR}  and send_lx=2 and send_jg=600)
+	</select>
+	
+	
+	<!-- 此班组待上传总人数 -进场 -->
+	<select id="getTeamWorkerCnt_Entry"
+		parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		
+		<![CDATA[
+		select  count(1) from wt_gdsend_log a 
+		left join dt_user_all a1 on a.parentID=a1.user_serial 
+		where send_lx=6 and send_state=0  and   worker_enterexitstatus=1 and 
+		regserial=#{regSerial,jdbcType=VARCHAR} and 
+		a1.user_fname=#{teamName,jdbcType=VARCHAR}
+		and convert(varchar(10),a.worker_enterexittime,120) <= convert(varchar(10),getdate(),120) and
+		a1.user_fname=#{teamName,jdbcType=VARCHAR} and 
+		a.parentID in (select parentID  from wt_gdsuccess_log where regserial =#{regSerial,jdbcType=VARCHAR} and send_lx=2 and send_jg=600)
+		]]>
+		 
+	</select>
+ 
+ 
+ 
+ 	<!-- 此班组待上传总人数 -退场 -->
+	<select id="getTeamWorkerCnt_Exit"
+		parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		
+		<![CDATA[
+		select  count(1) from wt_gdsend_log a 
+		left join view_user_all a1 on a.parentID=a1.user_serial 
+		where send_lx=6 and send_state=0  and   worker_enterexitstatus=0 and 
+		regserial=#{regSerial,jdbcType=VARCHAR} and 
+		a1.user_fname=#{teamName,jdbcType=VARCHAR}
+		and convert(varchar(10),a.worker_enterexittime,120) <= convert(varchar(10),getdate(),120) and
+		a1.user_fname=#{teamName,jdbcType=VARCHAR} and 
+		a.parentID in (select parentID  from wt_gdsuccess_log where regserial =#{regSerial,jdbcType=VARCHAR} and send_lx=2 and send_jg=600)
+		]]>
+		 
+	</select>
+	
+	
+	
+	<!-- 新增人员所属班组信息 -->
+<!--    <select id="getWorkerTeamListInfo"
+		resultType="com.weds.site.entity.DockingAddWorkerTeamListEntity">
+		select a.regSerial ,b.user_fname as teamName from wt_gdsend_log a 
+		left join dt_user b on a.parentID=b.user_serial 
+		where send_lx=2 and	a.send_state=0 and a.send_fun=0
+		group  by  a.regserial ,b.user_fname
+	</select>  -->
+ 
+ 
+  	 <!-- 根据班组找企业及项目-人员 -->
+  	<select id="getWorkerProCorpInfo"
+		resultType="com.weds.site.entity.DockingWorkerProTeamEntity">
+		<![CDATA[
+    	select distinct a.regserial,
+		c.code as projectCode,f.corpCode,f.corpName,e.teamSysNo,e.teamName
+		from wt_gdsend_log a left join dt_user_all b on a.parentID=b.user_serial
+		left join dt_pro c on a.regserial =c.regserial
+		left join gd_TeamMaster e on b.user_fname =e.TeamName and c.regserial =e.ProCode 
+		left join gd_ProCorpInfo f on e.SubContractorID=f.id  
+		where send_lx=2 and	a.send_state=0 and a.send_fun=0 and 
+		(c.code  is not null and c.code <>'' and e.TeamSysNo  is not null and e.TeamSysNo<>'' and f.corpCode is not null and f.corpCode<>'' )
+		]]>
+	</select> 
+	
+ 
+ 	 <!-- 根据班组找企业及项目-人员 -->
+<!--  	<select id="getWorkerProCorpInfo"
+			parameterType="java.lang.String"
+			resultType="com.weds.site.entity.DockingWorkerProTeamEntity">
+    	select distinct 
+		c.code as projectCode,f.corpCode,f.corpName,e.teamSysNo,e.teamName
+		from wt_gdsend_log a left join dt_user b on a.parentID=b.user_serial
+		left join dt_pro c on a.regserial =c.regserial
+		left join gd_TeamMaster e on b.user_fname =e.TeamName
+		left join gd_ProCorpInfo f on e.SubContractorID=f.id  
+		where send_lx=2 and	a.send_state=0 and a.send_fun=0 and 
+		a.regserial =#{regSerial,jdbcType=VARCHAR} and b.user_fname=#{teamName,jdbcType=VARCHAR}
+	</select> -->
+	
+	
+
+ 	<!-- 待修改人员信息 -->
+	<select id="getUpdateWorkerInfo"
+		resultType="com.weds.site.entity.DockingWorkerUpdateEntity">
+
+		<![CDATA[
+  		select a.xh,b.user_serial as userSerial,a.send_fun as sendFun,
+		c.code as projectCode, g.corpCode,g.corpName,e.teamSysNo,e.teamName,
+		b.user_lname as workerName,b.isTeamLeader,b.idCardType,b.user_id as idCardNumber,
+		h.tt_code as  workType,b.workRole ,'' as issueCardDate ,b.user_card as cardNumber,user_nation as nation,
+		user_address as address ,politicsType,joinedTime,user_telephone as cellPhone,cultureLevelType,Specialty,
+		hasBadMedicalHistory,'' as urgentLinkMan,'' as urgentLinkManPhone,'' as workDate,'' as maritalStatus,
+		user_grantOrg as grantOrg,convert(varchar(10),user_starDate,120) as startDate,convert(varchar(10),user_expiryDate,120) as expiryDate,f.photo_path+f.photo_name as headImage	
+		from wt_gdsend_log a left join dt_user_all b on a.parentID=b.user_serial
+		left join dt_photo f on b.user_serial=f.user_serial 
+		left join dt_pro c on a.regserial =c.regserial
+		--left join gd_CorpBasicInfo d on c.corpID =d.id
+		left join gd_TeamMaster e on b.user_fname =e.TeamName and a.regserial =e.ProCode 
+		left join gd_ProCorpInfo g on e.SubContractorID=g.id 
+		left join tt_duty h on b.user_duty=h.tt_name 
+		where send_lx=2 and	a.send_state=0 and a.send_fun=1 and b.user_photo =1 and 
+		(e.teamSysNo is not null and e.teamSysNo<>'' ) and ( g.corpCode  is not null and g.CorpCode <>'') and  
+		( g.corpName  is not null and g.corpName <>'') and (e.teamName is not null and e.teamName<>'' ) and 
+		isnull(h.tt_code,'')<>''  and isnull(b.user_id,'')<>'' and  b.workRole is not null and isnull(b.idCardType,'')<>'' and 
+		isnull(user_nation,'')<>'' and isnull(user_address,'')<>'' and isnull(politicsType,'')<>'' and isnull(user_telephone,'')<>'' and 
+		isnull(cultureLevelType,'')<>'' and isnull(user_grantOrg,'')<>''
+		]]>
+	</select>	
+	
+	
+	<!-- 班组及工地信息-进出场 -->
+	<select id="getProjectTeamList"
+		resultType="com.weds.site.entity.DockingWorkerProTeamEntity">
+		<![CDATA[
+ 		select distinct a.regserial,
+		c.code as projectCode,f.corpCode,f.corpName,e.teamSysNo,e.teamName
+		from wt_gdsend_log a left join dt_user_all b on a.parentID=b.user_serial
+		left join dt_pro c on a.regserial =c.regserial
+		left join gd_TeamMaster e on b.user_fname =e.TeamName and c.regserial =e.ProCode 
+		left join gd_ProCorpInfo f on e.SubContractorID=f.id  
+		where send_lx=6 and	a.send_state=0 
+		and convert(varchar(10),a.worker_enterexittime,120) <= convert(varchar(10),getdate(),120)
+		and (c.code is not null and c.code<>'' and  e.teamSysNo is not null and e.teamSysNo<>'')
+		]]>
+	</select>
+	  
+ 
+	  
+	 <!-- 进场人员信息 -->
+	<select id="getWorkerEntryList"
+		parameterType="java.lang.String"
+		resultType="com.weds.site.entity.WorkerListEntryEntity">
+		
+		<![CDATA[
+		select  top 50 a.parentID as userSerial,b.idCardType ,b.user_id as idCardNumber,
+		a.worker_enterexitstatus as type ,convert(varchar(10),a.worker_enterexittime,120) as date
+		from wt_gdsend_log a inner join dt_user_all b on a.parentID =b.user_serial 
+		inner join dt_dep c on b.user_dep =c.dep_serial and a.regserial =c.dep_regserial
+		where  a.send_lx=6 and	a.send_state=0  and 
+		a.regserial=#{regSerial,jdbcType=VARCHAR} and 
+		b.user_fname=#{teamName,jdbcType=VARCHAR}
+		and convert(varchar(10),a.worker_enterexittime,120) <= convert(varchar(10),getdate(),120) and worker_enterexitstatus=1
+		and a.parentID in (select parentID  from wt_gdsuccess_log where regserial =#{regSerial,jdbcType=VARCHAR} and send_lx=2 and send_jg=600)
+		order by a.worker_enterexitstatus desc
+		]]>
+		
+	</select>
+	
+	
+	
+	<!-- 出场人员信息 -->
+	<select id="getWorkerExitList"
+		parameterType="java.lang.String"
+		resultType="com.weds.site.entity.WorkerListEntryEntity">
+		
+		<![CDATA[
+		select  top 50 a.parentID as userSerial,b.idCardType ,b.user_id as idCardNumber,
+		a.worker_enterexitstatus as type ,convert(varchar(10),a.worker_enterexittime,120) as date
+		from wt_gdsend_log a inner join view_user_all b on a.parentID =b.user_serial
+		inner join dt_dep c on b.user_dep =c.dep_serial and a.regserial =c.dep_regserial
+		where  a.send_lx=6 and	a.send_state=0  and 
+		a.regserial=#{regSerial,jdbcType=VARCHAR} and 
+		b.user_fname=#{teamName,jdbcType=VARCHAR}
+		and convert(varchar(10),a.worker_enterexittime,120) <= convert(varchar(10),getdate(),120) and worker_enterexitstatus=0
+		and a.parentID in (select parentID  from wt_gdsuccess_log where regserial =#{regSerial,jdbcType=VARCHAR} and send_lx=2 and send_jg=600)
+		order by a.worker_enterexitstatus desc
+		]]>
+		
+	</select>
+	  
+	  
+	<!-- 工人合同信息-项目列表 -->
+	<select id="getProContractList"
+			resultType="com.weds.site.entity.DockingProContractListEntity">
+			
+			<![CDATA[
+			select distinct a.ProCode,b.code as projectCode,b.regserial,c.CorpCode 
+			from gd_WorkerContract a left join dt_pro b on a.ProCode =b.regserial 
+			left join  gd_CorpBasicInfo c on b.corpId=c.id 
+			where sendStatus=0 and ISNULL(b.code,'')<>'' and isnull(c.CorpCode ,'')<>''
+			]]>
+	</select> 
+	
+		<!-- 		select distinct a.ProCode,b.code as projectCode,b.regserial
+			from gd_WorkerContract a left join dt_pro b on a.ProCode =b.regserial 
+			where sendStatus=0 -->
+	  
+	  
+	 <!-- 工人合同信息 -->
+	<select id="getWorkerContractList"
+		parameterType="java.lang.Integer"
+		resultType="com.weds.site.entity.ContractListEntity">
+		<![CDATA[
+			select top 5 a.id as xh,a.userSerial,b.code as projectCode,e.corpCode,e.corpName,
+			c.IDCardType as idCardType,c.user_id as idCardNumber,
+			a.contractPeriodType,convert(varchar(10),a.startDate,120) as startDate,
+			convert(varchar(10),a.endDate,120) as endDate,isnull(a.isImportContract,0) as isImportContract
+			from gd_WorkerContract a left join dt_pro b on a.ProCode =b.regserial
+			--left join dt_user_all c on a.userSerial=c.user_serial
+			left join (select s1.IDCardType,s1.user_id,s1.user_serial,s1.user_fname,s2.dep_regserial as regserial from dt_user_all s1 
+		    left join dt_dep s2 on s1.user_dep=s2.dep_serial where s2.dep_regserial=#{proCode,jdbcType=INTEGER} ) c on a.userSerial=c.user_serial
+			left join gd_TeamMaster d on c.user_fname=d.TeamName  and c.regserial =d.ProCode 
+			left join gd_ProCorpInfo e on d.SubContractorID=e.id 
+			left join  (select distinct user_serial from dt_contract_attachment where reg_serial=#{proCode,jdbcType=INTEGER}) f on a.userSerial =f.user_serial 
+			where d.teamState=0 and a.sendStatus=0 and a.proCode=#{proCode,jdbcType=INTEGER}
+			and (isnull(a.isImportContract,0)=0 or (isnull(a.isImportContract,0)=1 and f.user_serial is not null ))
+			and a.userSerial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =2 and regserial=#{proCode,jdbcType=INTEGER}) 
+			and a.userSerial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =6 and regserial=#{proCode,jdbcType=INTEGER})
+		]]>
+	</select>
+	
+	
+	<!-- 工人合同照片 -->
+	<select id="getAttachment"
+		resultType="com.weds.site.entity.AttachmentsEntity">
+		
+			select top 2 xh,contract_name as name,right(contract_path,len(contract_path)-2) +contract_name  as data from dt_contract_attachment 
+			where user_Serial =#{userSerial,jdbcType=INTEGER} and  reg_serial =#{regSerial,jdbcType=INTEGER}
+		
+	</select>
+	<!-- 			select top 2 xh,contract_name as name,#{scmUrl} + right(contract_path,len(contract_path)-2) +contract_name  as data from dt_contract_attachment 
+			where user_Serial =#{userSerial,jdbcType=INTEGER} and  reg_serial =#{regSerial,jdbcType=INTEGER} -->
+   
+
+	 <!-- 此项目上传总合同人数 -->
+	<select id="getWorkerContractCnt"
+		parameterType="java.lang.Integer"
+		resultType="java.lang.Integer">
+		select  count(1) from gd_WorkerContract 
+		where sendStatus=0  and  proCode=#{proCode,jdbcType=INTEGER}
+		and userSerial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =2 and regserial=#{proCode,jdbcType=INTEGER}) 
+		and userSerial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =6 and regserial=#{proCode,jdbcType=INTEGER})
+	</select>
+	
+	
+	<!-- 人员合同附件是否生成 -->
+	<select id="getAttachmentCnt" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+	
+		select  count(1) from dt_contract a left join dt_contract_attachment b on a.user_serial =b.user_serial and a.reg_serial =b.reg_serial  
+			where a.user_serial=#{userSerial,jdbcType=INTEGER} and a.reg_serial =#{regSerial,jdbcType=INTEGER} and b.user_serial  is not null
+			
+	</select>
+	
+	<!-- 人员是否有合同 -->
+	<select id="getAttCnt" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+	
+		select  count(1) from dt_contract  
+			where user_serial=#{userSerial,jdbcType=INTEGER} and reg_serial =#{regSerial,jdbcType=INTEGER}
+			
+	</select>
+	
+	
+	
+	 <!-- 更新工人合同，根据身份证号 -->
+	<update id="updateWorkerContractState" >
+<!-- 		 update a set sendStatus=1 from gd_WorkerContract a 
+		 left join dt_user b on a.userSerial=b.user_serial  
+		 where b.user_id=#{userId,jdbcType=VARCHAR} and proCode=#{proCode,jdbcType=VARCHAR} -->
+		 
+		 
+		 update gd_WorkerContract set sendStatus=1 
+		 where id=#{xh,jdbcType=INTEGER} and proCode=#{proCode,jdbcType=VARCHAR}
+		 
+	</update>
+	
+	
+	<!-- 更新工人合同，根据身份证号 -->
+	<update id="updateWorkerContractStateByID" parameterType="java.lang.String">
+ 		 update a set sendStatus=1 from gd_WorkerContract a 
+		 left join dt_user b on a.userSerial=b.user_serial  
+		 where b.user_id=#{userId,jdbcType=VARCHAR} and proCode=#{proCode,jdbcType=VARCHAR} 
+
+		 
+	</update>
+	
+	
+	
+	<!-- 更新工人合同照片状态，根据人员序号 -->
+	<update id="updateWorkerContractPhotoState" >
+ 		 update dt_contract set sendStatus=1
+		 where user_serial=#{userSerial,jdbcType=INTEGER} and reg_serial=#{proCode,jdbcType=VARCHAR} 
+
+	</update>
+	
+	
+	<!-- 更新工人合同照片状态，根据人员序号 -->
+	<update id="updateWorkerContractPhotoState1" >
+ 		 update dt_contract_attachment set sendStatus=1
+		 where user_serial=#{userSerial,jdbcType=INTEGER} and reg_serial=#{proCode,jdbcType=VARCHAR} 
+
+	</update>
+	
+	
+	<!-- 考勤记录-项目、班组 -->
+	<select id="getWorkerAttendancePro"
+		resultType="com.weds.site.entity.DockingWorkerAttendanceTeamEntity">
+		
+		select distinct f1.regserial,
+		c.code as projectCode,e.teamSysNo,e.teamName
+		from kt_jl a left join st_device f1 on a.dev_serial =f1.bh
+		left join dt_user b on a.user_serial=b.user_serial
+		left join dt_pro c on f1.regserial =c.regserial
+		left join gd_TeamMaster e on b.user_fname =e.TeamName  and c.regserial =e.ProCode 
+		where a.sendStatus =0  and c.code is not null and e.TeamSysNo is not null 
+		and a.CheckType in   ('01','02') 
+		
+		
+	</select>
+	
+	
+	
+	<!-- 此班组需上传考勤记录数量 -->
+	<select id="getWorkerJlCnt"
+		parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		
+		select count(1) from kt_jl a left join st_device f1 on a.dev_serial =f1.bh 
+		left join dt_user b on a.user_serial=b.user_serial 
+		where a.sendStatus=0 and  f1.regserial=#{regSerial,jdbcType=VARCHAR} and 
+		b.user_fname=#{teamName,jdbcType=VARCHAR}
+		and a.user_serial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =2 and regserial=#{regSerial,jdbcType=VARCHAR})
+		and a.user_serial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =6 and regserial=#{regSerial,jdbcType=VARCHAR})
+		
+	</select>
+
+
+
+	 <!-- 工人考勤记录信息 -->
+	<select id="getWorkerAttendanceList"
+		parameterType="java.lang.String"
+		resultType="com.weds.site.entity.DataListEntity">
+		
+		select top 20 a.bh,b.IDCardType as idCardType,b.user_id as idCardNumber,convert(varchar(19),a.sj,120) as date,
+		isnull(a.CheckType,'01') as direction,f1.mc as channel,
+		case iden when 'c' then '006' when 'f' then '003' when 'l'  then '001' else '011' end  attendType
+		from kt_jl a left join st_device f1 on a.dev_serial =f1.bh
+		left join dt_user b on a.user_serial=b.user_serial
+		left join dt_dep w on b.user_dep =w.dep_serial
+		left join dt_pro c on f1.regserial =c.regserial
+		left join gd_TeamMaster e on b.user_fname =e.TeamName  and w.dep_regserial =e.ProCode
+		where a.sendStatus =0 and  CheckType in ('01','02') and  
+		f1.regserial =#{regSerial,jdbcType=VARCHAR} and 
+		b.user_fname=#{teamName,jdbcType=VARCHAR}
+		and a.user_serial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =2 and regserial=#{regSerial,jdbcType=VARCHAR})
+		and a.user_serial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =6 and regserial=#{regSerial,jdbcType=VARCHAR})
+		
+	</select>
+	
+	
+	
+ 	<!-- 更新工人考勤记录状态 -->
+	<update id="updateWorkerJlBybhStatus" parameterType="java.lang.Integer">
+		 update kt_jl set sendStatus=1 where bh=#{bh,jdbcType=INTEGER}
+	</update>
+ 
+ 
+ 
+ 	<!-- 工资-项目、班组 -->
+	<select id="getPayRollPro"
+		resultType="com.weds.site.entity.DockingPayRollTeamEntity">
+		
+	  select distinct  b.regserial,b.Code as projectCode,f.corpCode,f.corpName ,
+	  e.TeamSysNo,e.TeamName,a.pro_bh as proBh,a.wa_month as payMonth from gd_wages a 
+	  left join dt_pro b on a.pro_bh =b.bh 
+	  left join dt_user c on a.user_serial=c.user_serial 
+	   left join dt_dep d on c.user_dep=d.dep_serial 
+	  left join gd_TeamMaster e on c.user_fname =e.TeamName  and d.dep_regserial=e.ProCode 
+	  left join gd_ProCorpInfo f on e.SubContractorID=f.id 
+	  where a.sendStatus =0 and f.corpCode is not null and  e.TeamSysNo is not null
+		
+	</select>
+ 
+ 
+ 	<!-- 此班组需上传工资记录数量 -->
+	<select id="getPayRollCnt"
+		resultType="java.lang.Integer">
+		
+		<![CDATA[
+		select count(1)  from gd_wages  a left join dt_user b on a.user_serial=b.user_serial 
+  		where a.sendStatus=0 and a.pro_bh =#{proBh,jdbcType=VARCHAR} and b.user_fname =#{teamName,jdbcType=VARCHAR}
+ 		and a.user_serial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =2 and regserial=#{regSerial,jdbcType=VARCHAR})
+		and a.user_serial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =6 and regserial=#{regSerial,jdbcType=VARCHAR})
+		and a.wa_month=#{payMonth,jdbcType=VARCHAR}  and isBackPay =#{isBackPay,jdbcType=INTEGER} 
+		]]>
+	</select>
+ 
+  
+	 <!-- 工资记录信息 -->
+	<select id="getPayRollList"
+		resultType="com.weds.site.entity.DetailListEntity">
+		
+	  <![CDATA[
+  
+	  
+	   select top 20 a.user_serial as userSerial,b.idCardType,b.user_id as idCardNumber,b.user_bank  as payRollBankCardNumber,
+	  b.payRollBankCode,b.payRollBankName,b.payBankCardNumber,b.payBankCode,b.payBankName,
+	  a.wa_yf as totalPayAmount,a.wa_sf as actualAmount,isnull(a.isBackPay,0) as isBackPay,
+	  convert(varchar(10),a.sj,120) as balanceDate,'' as  backPayMonth,thirdPayRollCode
+	  from (select user_serial,isBackPay,sum(wa_yf) as wa_yf,sum(wa_sf) as wa_sf,max(sj) as sj,max(wa_bh) as thirdPayRollCode from gd_wages 
+		where pro_bh =#{proBh,jdbcType=VARCHAR} and wa_month =#{payMonth,jdbcType=VARCHAR} and  isBackPay =0 and sendStatus=0 and isnull(isrepair ,0)=0  group by user_serial,isBackPay) a  
+	  left join dt_user b on a.user_serial=b.user_serial where b.user_fname=#{teamName,jdbcType=VARCHAR}
+	  and a.user_serial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =2 and regserial=#{regSerial,jdbcType=VARCHAR})
+	  and a.user_serial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =6 and regserial=#{regSerial,jdbcType=VARCHAR})
+	  and isnull(b.user_bank,'') <>'' and isnull(b.payRollBankCode,'')<>'' and isnull(b.payRollBankName,'')<>'' and 
+	  isnull(b.payBankCode,'')<>''  and isnull(b.payBankName,'')<>'' and isnull(b.payBankCardNumber,'')<>''
+	   
+	  ]]>
+	  
+	</select>
+	
+	
+	<!-- 	  select top 20 a.bh,b.idCardType,b.user_id as idCardNumber,b.user_bank  as payRollBankCardNumber,
+	  b.payRollBankCode,b.payRollBankName,b.payBankCardNumber,b.payBankCode,b.payBankName,
+	  a.wa_yf as totalPayAmount,a.wa_sf as actualAmount,isnull(a.isBackPay,0) as isBackPay,
+	  convert(varchar(10),a.sj,120) as balanceDate,
+	  case a.isBackPay when 1 then convert(varchar(10),a.backPayMonth,120)  else '' end backPayMonth,a.wa_bh as thirdPayRollCode
+	  from gd_wages a  left join dt_user b on a.user_serial=b.user_serial 
+	  where a.sendStatus =0	and a.pro_bh =#{proBh,jdbcType=VARCHAR} and 
+	  b.user_fname=#{teamName,jdbcType=VARCHAR} and a.wa_month=#{payMonth,jdbcType=VARCHAR} and isBackPay =#{isBackPay,jdbcType=INTEGER} 
+	  and a.user_serial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =2 and regserial=#{regSerial,jdbcType=VARCHAR})
+	  and a.user_serial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =6 and regserial=#{regSerial,jdbcType=VARCHAR})
+	  and isnull(b.user_bank,'') <>'' and isnull(b.payRollBankCode,'')<>'' and isnull(b.payRollBankName,'')<>'' and 
+	  isnull(b.payBankCode,'')<>''  and isnull(b.payBankName,'')<>'' and isnull(b.payBankCardNumber,'')<>'' -->
+	
+	
+	<!-- 工资记录信息-根据人员序号、企业号查找 -->
+	<select id="getPayRollList1" 
+		resultType="com.weds.site.entity.DetailListEntity">
+		
+	  <![CDATA[
+	  select  a.bh,b.idCardType,b.user_id as idCardNumber,b.user_bank  as payRollBankCardNumber,
+	  b.payRollBankCode,b.payRollBankName,b.payBankCardNumber,b.payBankCode,b.payBankName,
+	  a.wa_yf as totalPayAmount,a.wa_sf as actualAmount,isnull(a.isBackPay,0) as isBackPay,
+	  convert(varchar(10),a.sj,120) as balanceDate,
+	  case a.isBackPay when 1 then convert(varchar(10),a.backPayMonth,120)  else '' end backPayMonth,a.wa_bh as thirdPayRollCode
+	  from gd_wages a  left join dt_user b on a.user_serial=b.user_serial 
+	  where a.sendStatus =0	and a.pro_bh =#{proBh,jdbcType=VARCHAR} and a.user_serial =#{userSerial,jdbcType=INTEGER}
+	  and a.wa_month=#{payMonth,jdbcType=VARCHAR}
+	  ]]>
+	  
+	</select>
+	
+	
+	<!-- 待发工资人员 -->
+	<select id="getPayUser"	parameterType="java.lang.String"
+		resultType="com.weds.site.entity.PayUserEntity">
+		
+	<![CDATA[
+	  select distinct a.user_serial as userSerial from gd_wages a  left join dt_user b on a.user_serial=b.user_serial 
+	  where a.sendStatus =0	and a.pro_bh =#{proBh,jdbcType=VARCHAR} and  b.user_fname=#{teamName,jdbcType=VARCHAR} and 
+	  isnull(b.user_bank,'') <>'' and isnull(b.payRollBankCode,'')<>'' and isnull(b.payRollBankName,'')<>'' and 
+	  isnull(b.payBankCode,'')<>''  and isnull(b.payBankName,'')<>'' and isnull(b.payBankCardNumber,'')<>'' 
+	  and a.user_serial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =2 and regserial=#{regSerial,jdbcType=VARCHAR})
+	  and a.user_serial in (select distinct parentId  from wt_gdsuccess_log where send_jg=600 and send_lx =6 and regserial=#{regSerial,jdbcType=VARCHAR})
+	  and a.wa_month=#{payMonth,jdbcType=VARCHAR}
+	  ]]>
+	  
+	</select>
+	
+	
+	<!-- 更新工资编码 -->
+	<update id="updateWagesCode" parameterType="java.lang.String">
+	
+	 update a set payrollCode =#{payrollCode,jdbcType=VARCHAR} from  gd_wages a inner join (select parentID,wa_month from wt_gdsend_log  
+	 	where send_lx=9 and request_serial=#{requestSerialCode,jdbcType=VARCHAR}) b 
+	  on a.user_serial =b.parentID and a.wa_month =b.wa_month 
+	 where a.sendStatus=1 and a.isBackPay =0 and a.isRepair=0
+	
+
+	</update>
+	
+<!-- 		update gd_wages set payrollCode=#{payrollCode,jdbcType=VARCHAR} 
+		where bh in  (select parentID from wt_gdsend_log  where send_lx=9 and request_serial=#{requestSerialCode,jdbcType=VARCHAR}) -->
+	
+	
+	
+ 	<!-- 更新工资表状态 -->
+	<update id="updateWagesBybhStatus" parameterType="java.lang.Integer">
+		 update gd_wages set sendStatus=1 where bh=#{bh,jdbcType=INTEGER}
+	</update>
+	
+	
+	
+ 	<!-- 更新工资表状态-根据人员序号更新非补发人员 -->
+	<update id="updateWagesBySerialStatus">
+	<![CDATA[
+		 update gd_wages set sendStatus=1 where user_serial=#{userSerial,jdbcType=INTEGER}  
+		 and pro_bh =#{proBh,jdbcType=INTEGER}  and wa_month =#{waMonth,jdbcType=VARCHAR} 
+		 and  isBackPay =0 and sendStatus=0 and isnull(isrepair ,0)=0
+	 ]]>
+	</update>
+	
+
+
+	
+	<!-- 更新发送日志表-根据xh -->
+	<update id="updateSendLog" parameterType="com.weds.site.entity.UpdateSendLogEntity">
+		update wt_gdsend_log set  send_state=1,
+		send_jg=#{sendCode,jdbcType=INTEGER},
+		request_serial=#{requestSerial,jdbcType=INTEGER},
+		send_msg=#{sendMsg,jdbcType=VARCHAR},
+		send_time=getdate()
+		where xh=#{xh,jdbcType=INTEGER}
+	</update>
+
+
+
+	<!-- 写合同请求日志 -->
+	<insert id="addSendContractLog" parameterType="com.weds.site.entity.DockingAddSendContractLogEntity">
+	  
+<!-- 		insert into wt_gdsend_log(send_lx,send_fun,send_state,send_jg,request_serial,regserial,log_time,parentID,send_msg)
+		select #{lx,jdbcType=INTEGER},0,1,#{requestJg,jdbcType=INTEGER},#{requestSerial,jdbcType=NVARCHAR},
+		#{regserial,jdbcType=INTEGER},getdate(),user_serial,#{requestMessage,jdbcType=NVARCHAR} from dt_user 
+		where user_id= #{userId,jdbcType=NVARCHAR} -->
+		
+		insert into wt_gdsend_log(send_lx,send_fun,send_state,send_jg,request_serial,regserial,log_time,parentID,send_msg)
+		values(#{lx,jdbcType=INTEGER},0,1,#{requestJg,jdbcType=INTEGER},#{requestSerial,jdbcType=NVARCHAR},
+		#{regserial,jdbcType=INTEGER},getdate(),#{userSerial,jdbcType=INTEGER},#{requestMessage,jdbcType=NVARCHAR}) 
+		
+   </insert>
+   
+   
+   
+   	<!-- 写合同请求日志 -->
+	<insert id="addSendContractLogByID" parameterType="com.weds.site.entity.DockingAddSendContractLogEntity">
+	  
+ 		insert into wt_gdsend_log(send_lx,send_fun,send_state,send_jg,request_serial,regserial,log_time,parentID,send_msg)
+		select #{lx,jdbcType=INTEGER},0,1,#{requestJg,jdbcType=INTEGER},#{requestSerial,jdbcType=NVARCHAR},
+		#{regserial,jdbcType=INTEGER},getdate(),user_serial,#{requestMessage,jdbcType=NVARCHAR} from dt_user 
+		where user_id= #{userId,jdbcType=NVARCHAR} 
+				
+   </insert>
+   
+   
+   <!-- 写考勤记录请求日志 -->
+   	<insert id="addSendJlLog" parameterType="com.weds.site.entity.DockingAddSendContractLogEntity">
+	  
+		insert into wt_gdsend_log(send_lx,send_fun,send_state,send_jg,request_serial,regserial,log_time,parentID,send_msg)
+		values (#{lx,jdbcType=INTEGER},0,1,#{requestJg,jdbcType=INTEGER},#{requestSerial,jdbcType=NVARCHAR},
+		#{regserial,jdbcType=INTEGER},getdate(),#{parentId,jdbcType=INTEGER},#{requestMessage,jdbcType=NVARCHAR})
+		
+   </insert>
+   
+   
+     <!-- 写工资记录请求日志 -->
+   	<insert id="addSendPayLog" parameterType="com.weds.site.entity.DockingAddSendContractLogEntity">
+	  
+		insert into wt_gdsend_log(send_lx,send_fun,send_state,send_jg,request_serial,regserial,log_time,parentID,send_msg,wa_month)
+		values (#{lx,jdbcType=INTEGER},0,1,#{requestJg,jdbcType=INTEGER},#{requestSerial,jdbcType=NVARCHAR},
+		#{regserial,jdbcType=INTEGER},getdate(),#{parentId,jdbcType=INTEGER},#{requestMessage,jdbcType=NVARCHAR},#{payMonth,jdbcType=NVARCHAR})
+		
+   </insert>
+
+
+
+	<!-- 更新发送日志表-根据身份证号 -->  
+	<update id="updateSendLogbyUserid" 
+		parameterType="com.weds.site.entity.UpdateSendLogbyUseridEntity">
+		update wt_gdsend_log set  send_state=1,
+		send_jg=#{sendCode,jdbcType=INTEGER},
+		request_serial=#{requestSerial,jdbcType=INTEGER},
+		send_msg=#{sendMsg,jdbcType=VARCHAR},
+		send_time=getdate()
+		where send_lx=#{sendLx,jdbcType=INTEGER} and send_state =0 and send_fun=0 and  
+		parentID = (select user_serial from dt_user where user_id=#{idCardNumber,jdbcType=VARCHAR} and user_type &lt; 51)
+		
+		<if test="type != null and type != ''">
+			and worker_enterexitstatus=#{type,jdbcType=INTEGER}
+		</if>
+		
+		<if test="entryTime != null and entryTime != ''">
+			and worker_enterexittime=#{entryTime,jdbcType=VARCHAR}
+		</if>  
+		
+	</update>
+	
+	
+	<!-- 更新发送日志表-根据人员序号 -->  
+	<update id="updateSendLogbySerial" 
+		parameterType="com.weds.site.entity.UpdateSendLogbyUseridEntity">
+		update wt_gdsend_log set  send_state=1,
+		send_jg=#{sendCode,jdbcType=INTEGER},
+		request_serial=#{requestSerial,jdbcType=INTEGER},
+		send_msg=#{sendMsg,jdbcType=VARCHAR},
+		send_time=getdate()
+		where send_lx=#{sendLx,jdbcType=INTEGER} and send_state =0 and send_fun=0 and  
+		parentID =#{userSerial,jdbcType=INTEGER} and regserial=#{regSerial,jdbcType=VARCHAR}
+		
+		<if test="type != null and type != ''">
+			and worker_enterexitstatus=#{type,jdbcType=INTEGER}
+		</if>
+		
+		<if test="entryTime != null and entryTime != ''">
+			and worker_enterexittime=#{entryTime,jdbcType=VARCHAR}
+		</if>  
+		
+	</update>
+	
+	
+	
+
+
+	<!-- 写查询日志 -->
+	<insert id="addRequestLog" parameterType="com.weds.site.entity.DockingRequestLogEntity">
+    insert into wt_gdrequest_log(lx,request_state,request_serial,request_msg,request_sj,request_jg,parentID,return_status)
+    values (#{lx,jdbcType=INTEGER},1, #{requestSerial,jdbcType=NVARCHAR}, #{requestMessage,jdbcType=NVARCHAR}, getdate(),
+    #{requestJg,jdbcType=INTEGER},#{parentId,jdbcType=INTEGER},#{returnStatus,jdbcType=INTEGER})
+   </insert>
+  
+  
+  
+   	<!-- 根据身份证号查找对应wt_gdsend_log表的ID -->
+	<select id="getParentId"
+		resultType="java.lang.Integer">
+
+ 		select xh from wt_gdsend_log where parentId in (select user_serial from dt_user where user_id=#{userID,jdbcType=NVARCHAR}) 
+ 		and send_lx=2 and send_fun=0 and request_serial=#{requestSerial,jdbcType=NVARCHAR}
+
+	</select>	
+	
+	
+	
+<!-- 	 获取项目所属企业 -->
+	<select id="getCorpCodebyPro"
+		parameterType="java.lang.String"
+		resultType="com.weds.site.entity.DockingGetCorpKeyIntity">
+		
+		select b.CorpCode,a.appid as appId,a.secretkey as secretKey,isnull(isnewpro,0) as isNewPro  from dt_pro a left join gd_CorpBasicInfo b on a.corpId=b.id where a.code=#{proCode,jdbcType=NVARCHAR}
+ 
+	</select> 
+	
+	
+	<!-- 写操作成功日志 -->
+	<insert id="insertSuccess" parameterType="com.weds.site.entity.DockingInsertSuccessLogEntity">
+    insert into wt_gdsuccess_log(send_lx,request_serial,regserial,parentID,parentXh,log_time)
+    values (#{sendLx,jdbcType=INTEGER}, #{requestSerial,jdbcType=NVARCHAR},#{regserial,jdbcType=INTEGER},#{parentId,jdbcType=INTEGER},#{parentXh,jdbcType=INTEGER}, getdate())
+   </insert>
+   
+   
+   	<!-- 先删除成功日志 -->
+	<delete  id="delSuccess" parameterType="com.weds.site.entity.DockingInsertSuccessLogEntity">
+	
+    delete wt_gdsuccess_log where send_lx=#{sendLx,jdbcType=INTEGER} and 
+    regserial =#{regserial,jdbcType=INTEGER} and  
+    parentID=#{parentId,jdbcType=INTEGER}
+    
+    </delete>
+    
+    
+    <!-- 写操作成功日志-byuserID -->
+	<insert id="insertSuccessbyUserID" parameterType="com.weds.site.entity.DockingInsertSuccessLogEntity">
+	<![CDATA[
+    insert into wt_gdsuccess_log(send_lx,request_serial,regserial,parentID,parentXh,log_time)
+    select #{sendLx,jdbcType=INTEGER}, #{requestSerial,jdbcType=NVARCHAR},#{regSerial,jdbcType=INTEGER} ,user_serial,#{parentXh,jdbcType=INTEGER}, getdate()
+    from dt_user where user_id=#{idCardNumber,jdbcType=NVARCHAR} and user_type < 51
+    ]]>
+   </insert> 
+   
+   
+    <!-- 写操作成功日志-byuserSerial -->
+	<insert id="insertSuccessbySerial" parameterType="com.weds.site.entity.DockingInsertSuccessLogEntity">
+	<![CDATA[
+    insert into wt_gdsuccess_log(send_lx,request_serial,regserial,parentID,parentXh,log_time)
+    values(#{sendLx,jdbcType=INTEGER}, #{requestSerial,jdbcType=NVARCHAR},#{regSerial,jdbcType=INTEGER},#{userSerial,jdbcType=INTEGER},#{parentXh,jdbcType=INTEGER}, getdate())
+   
+    ]]>
+   </insert> 
+   
+   
+   	<!-- 先删除成功日志 -byuserID -->
+	<delete  id="delSuccessbyUserID" parameterType="com.weds.site.entity.DockingInsertSuccessLogEntity">
+	
+	<![CDATA[
+    delete wt_gdsuccess_log where send_lx=#{sendLx,jdbcType=INTEGER} and 
+    regserial =#{regSerial,jdbcType=INTEGER}  and  
+    parentID=(select user_serial from dt_user  where user_id=#{idCardNumber,jdbcType=NVARCHAR} and user_type < 51)
+    
+    ]]>
+    </delete>
+    
+    
+    <!-- 先删除成功日志 -byuserSerial -->
+	<delete  id="delSuccessbySerial" parameterType="com.weds.site.entity.DockingInsertSuccessLogEntity">
+	
+	<![CDATA[
+    delete wt_gdsuccess_log where send_lx=#{sendLx,jdbcType=INTEGER} and 
+    regserial =#{regSerial,jdbcType=INTEGER}  and  
+    parentID=#{userSerial,jdbcType=INTEGER}
+    
+    ]]>
+    </delete>
+    
+    
+    <select id="cxUserID"
+		parameterType="com.weds.site.entity.DockingInsertSuccessLogEntity"
+		resultType="java.lang.Integer">
+		<![CDATA[
+ 
+		select count(1) from wt_gdsuccess_log  
+		where send_lx=#{sendLx,jdbcType=INTEGER} and 
+	    regserial =#{regSerial,jdbcType=INTEGER} and  
+	    parentID = (select user_serial from dt_user  where user_id=#{idCardNumber,jdbcType=NVARCHAR} and user_type < 51)
+	    
+ 		]]>
+	</select>
+	
+	
+	<select id="cxUserBySerial"
+		parameterType="com.weds.site.entity.DockingInsertSuccessLogEntity"
+		resultType="java.lang.Integer">
+		<![CDATA[
+ 
+		select count(1) from wt_gdsuccess_log  
+		where send_lx=#{sendLx,jdbcType=INTEGER} and 
+	    regserial =#{regSerial,jdbcType=INTEGER} and  
+	    parentID =  #{userSerial,jdbcType=INTEGER} 
+	    
+ 		]]>
+	</select>
+	
+	
+	<update id="updateLogStatus" parameterType="java.lang.String">
+	
+		update wt_gdsuccess_log set send_jg=600
+		where request_serial=#{requestSerial,jdbcType=INTEGER}
+		
+	</update>
+	
+    
+    <!-- 查询出等待处理的记录 -->
+    <select id="getResultInfo1" resultType="com.weds.site.entity.DockingQueryResultInfoEntity">
+  
+		<![CDATA[ 
+		 select a.xh,a.lx as sendLx,b.send_fun as sendFun,a.request_serial as requestSerial,b.regSerial,c.appId,c.secretKey,
+		 isnull(b.worker_enterExitStatus,99) as workerEnterExitStatus from wt_gdRequest_log a 
+		 left join (select send_lx,send_fun,regserial,request_serial,worker_enterExitStatus from wt_gdsend_log 
+		 		where send_state =1 and (isnull(request_serial,'') <>'') and regserial is not null 
+		 		group by send_lx,send_fun,regserial,request_serial,worker_enterExitStatus) b on a.request_serial=b.request_serial
+		 left join dt_pro c on b.regserial =c.regserial  
+		 where a.return_status=0 and a.request_jg =0 and  isnull( c.appid,'')<>'' and  isnull(c.secretkey,'')<>''
+		 ]]>
+	 
+	</select> 
+	
+	<!-- 查询出等待处理的记录 -->
+	<!-- select a.xh,a.lx as sendLx,b.send_fun as sendFun,a.request_serial as requestSerial,b.regSerial,c.appId,c.secretKey,
+		 isnull(b.worker_enterExitStatus,99) as workerEnterExitStatus from wt_gdRequest_log a 
+		 left join wt_gdsend_log b on a.request_serial=b.request_serial
+		 left join dt_pro c on b.regserial =c.regserial  
+		 where a.return_status=0 and a.request_jg =0 and b.send_state =1 and  isnull( c.appid,'')<>'' and  isnull(c.secretkey,'')<>'' -->
+	
+	
+	<select id="getJlCnt" resultType="java.lang.Integer">
+	
+		<![CDATA[
+		select count(1) from wt_gdRequest_log where  lx=#{sendLx,jdbcType=INTEGER} and 
+	    request_serial =#{requestSerial,jdbcType=NVARCHAR} and return_status=0
+ 		]]>
+ 		
+	</select>
+	
+	
+	
+	<delete  id="delRequestInfo">
+	
+	<![CDATA[
+    delete wt_gdRequest_log where lx=#{sendLx,jdbcType=INTEGER} and 
+    request_serial =#{requestSerial,jdbcType=NVARCHAR}  and return_status=0
+    
+    ]]>
+    
+    </delete>
+ 
+	
+</mapper>

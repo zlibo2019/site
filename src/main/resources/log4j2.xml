@@ -1,0 +1,37 @@
+<!-- Configuration后面的status，这个用于设置log4j2自身内部的信息输出，可以不设置，当设置成trace时，你会看到log4j2内部各种详细输出。 
+	monitorInterval：Log4j能够自动检测修改配置 文件和重新配置本身，设置间隔秒数。 packages 从哪个package下检索自定义的appender -->
+<Configuration status="INFO" monitorInterval="60">
+	<properties>
+		<property name="LOG_HOME">D:/logs</property>
+		<property name="FILE_NAME">log</property>
+	</properties>
+	<!--先定义所有的appender -->
+	<Appenders>
+		<!--控制台只输出level及以上级别的信息（onMatch），其他的直接拒绝（onMismatch） -->
+		<Console name="Console" target="SYSTEM_OUT">
+			<!--这个都知道是输出日志的格式 -->
+			<PatternLayout
+				pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+		</Console>
+		<RollingRandomAccessFile name="MyFile"
+			fileName="${LOG_HOME}/${FILE_NAME}.log"
+			filePattern="${LOG_HOME}/$${date:yyyy-MM-dd}/${FILE_NAME}-%d{yyyy-MM-dd}-%i.log">
+			<PatternLayout charset="UTF-8"
+				pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+			<Policies>
+				<TimeBasedTriggeringPolicy interval="1" />
+				<SizeBasedTriggeringPolicy size="10 MB" />
+			</Policies>
+			<DefaultRolloverStrategy max="20" />
+		</RollingRandomAccessFile>
+	</Appenders>
+	<Loggers>
+		<Logger name="org.mybatis" level="INFO">
+		</Logger>
+		<Root level="INFO">
+			<AppenderRef ref="Console" />
+		<!--内容不输入到日志文件中 -->
+		<!--	<AppenderRef ref="MyFile" />  -->
+		</Root>
+	</Loggers>
+</Configuration>
